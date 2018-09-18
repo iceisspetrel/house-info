@@ -3,6 +3,8 @@ const request = require('request');
 const fs = require('fs');
 const path = require('path');
 
+let total = 0;
+
 /**根据分页码，获取楼盘信息， 主要提取楼盘名字以及楼盘明细的地址 */
 function getAllItems (page) {
     const base_url = 'https://www.cdfangxie.com/Infor/type/typeid/36.html?&p=' + page;
@@ -12,6 +14,9 @@ function getAllItems (page) {
             if(!error && resp.statusCode === 200) {
                 const $ = cheerio.load(body);
                 const lis = $('.ul_list li');
+
+                total = $('.pages2').text().split('/')[1].split(' ')[0] - 0;
+
                 lis.map((i, d) => {
                   if(!$(d).hasClass('line')) {
                     const a = $('a', $(d))[0];
@@ -53,8 +58,20 @@ function getHouseDetail (name, url, date) {
 function download (option = {}, index, total) {
   return new Promise((resolve, reject) => {
     const {name, href, date} = option;
-    const dir = path.join(__dirname, '房源资料');
+    const names = name.split('|');
 
+    let dir = path.join(__dirname, '房源资料');
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+    const now = new Date();
+    dir = path.join(dir, now.getFullYear() + '-' + date);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
+
+    dir = path.join(dir, names[0]);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
@@ -62,9 +79,7 @@ function download (option = {}, index, total) {
     const reg = /([^.]+)$/;
     const fileType = href.match(reg)[1];
 
-    const names = name.split('|');
-
-    const filename = '楼盘-' + date + '-' + names[0] + '-' + names[1] + '.' + fileType;
+    const filename = names[0] + '-' + names[1] + '.' + fileType;
 
     const seq = index > 9 ? index : '0' + index;
 
@@ -79,9 +94,16 @@ function download (option = {}, index, total) {
 }
 
 // 获取所有楼盘信息
-async function getAllHouseInfo (pages = [1, 2]) {
+async function getAllHouseInfo (pagers = 1) {
   let result = [];
-  for(let i=0; i<pages.length; i++){
+
+  const pages = [];
+  for(let x=1; x<=pagers; x++){
+    pages.push(x);
+  }
+
+  let len = pages.length;
+  for(let i=0; i<len; i++){
     const res = await getAllItems(pages[i]);
     result = [...result, ...res];
   }
@@ -99,4 +121,4 @@ async function getAllHouseInfo (pages = [1, 2]) {
   console.log('===================文件存放地址：' + path.join(__dirname, '房源资料') + '==================================');
 }
 
-getAllHouseInfo();
+getAllHouseInfo(3);

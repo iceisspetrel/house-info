@@ -64,7 +64,7 @@ function download (option = {}, index, total) {
 
     const names = name.split('|');
 
-    const filename = '楼盘-' + date + '-' + names[names.length - 1] + '.' + fileType;
+    const filename = '楼盘-' + date + '-' + names[0] + '-' + names[1] + '.' + fileType;
 
     const seq = index > 9 ? index : '0' + index;
 
